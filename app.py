@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 
 # ============================================================
-# PAGE CONFIGURATION & REFINED PROFESSIONAL STYLING
+# PAGE CONFIGURATION & SOLID DARK BLUE STYLING (NO GRADIENTS)
 # ============================================================
 
 st.set_page_config(
@@ -30,55 +30,56 @@ st.markdown(
     /* Completely hide default sidebar */
     [data-testid="stSidebar"] { display: none; }
 
-    /* Professional Blue University Header */
+    /* Solid Dark Navy Blue University Header (No Gradient) */
     .uni-header {
-        background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+        background-color: #0b132b;
         padding: 1.75rem 2rem;
         border-radius: 12px;
         color: white;
         margin-bottom: 1.5rem;
-        border-bottom: 4px solid #1d4ed8;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border-bottom: 4px solid #1c2541;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15);
     }
     .uni-header h1 { color: #ffffff; font-weight: 700; font-size: 2rem; margin-bottom: 0.25rem; }
-    .uni-header p { color: #bfdbfe; font-size: 0.95rem; margin: 0; }
+    .uni-header p { color: #cbd5e1; font-size: 0.95rem; margin: 0; }
 
     /* Clean Corporate Cards */
     .saas-card {
         background: #ffffff;
-        border: 1px solid #e2e8f0;
+        border: 1px solid #cbd5e1;
         padding: 1.75rem;
         border-radius: 10px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         height: 100%;
     }
-    .saas-card h3 { color: #0f172a; font-size: 1.25rem; font-weight: 600; margin-bottom: 0.75rem; }
+    .saas-card h3 { color: #0b132b; font-size: 1.25rem; font-weight: 600; margin-bottom: 0.75rem; }
     .saas-card p { color: #475569; font-size: 0.95rem; line-height: 1.5; }
 
     /* Metrics Styling */
     div[data-testid="stMetric"] {
         background: #ffffff;
-        border: 1px solid #e2e8f0;
+        border: 1px solid #cbd5e1;
         padding: 1rem;
         border-radius: 8px;
         box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
-    div[data-testid="stMetric"] label { color: #64748b !important; font-weight: 500 !important; }
-    div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: #0f172a; font-weight: 700; font-size: 1.6rem; }
+    div[data-testid="stMetric"] label { color: #475569 !important; font-weight: 500 !important; }
+    div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: #0b132b; font-weight: 700; font-size: 1.6rem; }
 
-    /* Buttons */
+    /* Solid Dark Blue Buttons (No Gradient) */
     .stButton button {
-        background: #2563eb;
+        background-color: #0b132b !important;
+        background-image: none !important;
         color: white;
         border-radius: 6px;
         font-weight: 600;
         padding: 0.5rem 1.25rem;
-        border: 1px solid #1d4ed8;
-        transition: background 0.2s;
+        border: 1px solid #1c2541;
+        transition: background-color 0.2s;
     }
     .stButton button:hover {
-        background: #1d4ed8;
-        border-color: #1e40af;
+        background-color: #1c2541 !important;
+        border-color: #3a506b;
     }
     </style>
     """,
@@ -305,7 +306,7 @@ def convert_df_to_excel(df):
 
 
 # ============================================================
-# BLUE HEADER & NAVIGATION BAR
+# SOLID DARK BLUE HEADER & NAVIGATION BAR
 # ============================================================
 
 st.markdown(
@@ -346,7 +347,7 @@ if page == "Home":
                 <h3>🏛️ Departmental Academic Management</h3>
                 <p>EduGuard-AI provides automated student performance monitoring, machine learning-driven risk evaluation, 
                 and comprehensive multi-course semester CGPA calculations for faculty members.</p>
-                <hr style="margin: 1.25rem 0; border: none; border-top: 1px solid #e2e8f0;">
+                <hr style="margin: 1.25rem 0; border: none; border-top: 1px solid #cbd5e1;">
                 <ul style="color: #334155; padding-left: 1.25rem; line-height: 1.6;">
                     <li><b>Automated Risk Assessment:</b> Instantly classifies students at academic risk based on continuous assessments.</li>
                     <li><b>Flexible File Parsing:</b> Supports standard department Excel/CSV grade sheets and batch ZIP archives.</li>
@@ -361,7 +362,7 @@ if page == "Home":
             """
             <div class="saas-card" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
                 <h3>Quick Actions</h3>
-                <p style="margin-bottom: 1.5rem; color: #64748b;">Begin batch evaluation or inspect logs.</p>
+                <p style="margin-bottom: 1.5rem; color: #475569;">Begin batch evaluation or inspect logs.</p>
             """,
             unsafe_allow_html=True,
         )
