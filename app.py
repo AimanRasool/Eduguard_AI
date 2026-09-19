@@ -11,67 +11,74 @@ from sklearn.ensemble import RandomForestClassifier
 
 
 # ============================================================
-# PAGE CONFIGURATION
+# PAGE CONFIGURATION & REFINED PROFESSIONAL STYLING
 # ============================================================
 
 st.set_page_config(
-    page_title="EduGuard-AI SaaS",
+    page_title="EduGuard-AI | UET Mardan",
     page_icon="🎓",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
-
-
-# ============================================================
-# CONSTANTS & MYSQL CONNECTION
-# ============================================================
-
-REQUIRED_COLS = [
-    "quiz1",
-    "quiz2",
-    "assignment1",
-    "assignment2",
-    "midterm",
-]
-
-def get_db_connection():
-    """Establish connection to MySQL using Streamlit secrets."""
-    db_config = st.secrets["mysql"]
-    conn = mysql.connector.connect(
-        host=db_config["host"],
-        port=db_config.get("port", 3306),
-        database=db_config["database"],
-        user=db_config["username"],
-        password=db_config["password"]
-    )
-    return conn
-
-
-# ============================================================
-# CUSTOM PROFESSIONAL CSS
-# ============================================================
 
 st.markdown(
     """
     <style>
-    .main { padding-top: 0rem; }
-    .block-container { padding-top: 1.5rem; padding-bottom: 2rem; }
-    .hero-container {
-        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-        padding: 3rem 2rem;
+    .main { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
+    .block-container { padding-top: 1rem; padding-bottom: 3rem; max-width: 1320px; }
+
+    /* Completely hide default sidebar */
+    [data-testid="stSidebar"] { display: none; }
+
+    /* Professional Blue University Header */
+    .uni-header {
+        background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+        padding: 1.75rem 2rem;
         border-radius: 12px;
         color: white;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+        border-bottom: 4px solid #1d4ed8;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
-    .hero-container h1 { color: white; font-weight: 700; }
-    .hero-container p { color: #e0e0e0; font-size: 1.1rem; }
-    .metric-card {
-        background-color: #f8f9fa;
-        border: 1px solid #e9ecef;
-        padding: 1.2rem;
+    .uni-header h1 { color: #ffffff; font-weight: 700; font-size: 2rem; margin-bottom: 0.25rem; }
+    .uni-header p { color: #bfdbfe; font-size: 0.95rem; margin: 0; }
+
+    /* Clean Corporate Cards */
+    .saas-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        padding: 1.75rem;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        height: 100%;
+    }
+    .saas-card h3 { color: #0f172a; font-size: 1.25rem; font-weight: 600; margin-bottom: 0.75rem; }
+    .saas-card p { color: #475569; font-size: 0.95rem; line-height: 1.5; }
+
+    /* Metrics Styling */
+    div[data-testid="stMetric"] {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        padding: 1rem;
         border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    div[data-testid="stMetric"] label { color: #64748b !important; font-weight: 500 !important; }
+    div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: #0f172a; font-weight: 700; font-size: 1.6rem; }
+
+    /* Buttons */
+    .stButton button {
+        background: #2563eb;
+        color: white;
+        border-radius: 6px;
+        font-weight: 600;
+        padding: 0.5rem 1.25rem;
+        border: 1px solid #1d4ed8;
+        transition: background 0.2s;
+    }
+    .stButton button:hover {
+        background: #1d4ed8;
+        border-color: #1e40af;
     }
     </style>
     """,
@@ -80,8 +87,23 @@ st.markdown(
 
 
 # ============================================================
-# DATABASE SETUP & MIGRATION
+# SESSION STATE & DYNAMIC DATABASE MIGRATION
 # ============================================================
+
+if "selected_page" not in st.session_state:
+    st.session_state.selected_page = "Home"
+
+REQUIRED_COLS = ["quiz1", "quiz2", "assignment1", "assignment2", "midterm"]
+
+def get_db_connection():
+    db_config = st.secrets["mysql"]
+    return mysql.connector.connect(
+        host=db_config["host"],
+        port=db_config.get("port", 3306),
+        database=db_config["database"],
+        user=db_config["username"],
+        password=db_config["password"]
+    )
 
 def init_db():
     conn = get_db_connection()
@@ -93,17 +115,24 @@ def init_db():
             batch_name VARCHAR(255),
             student_id VARCHAR(100),
             subject VARCHAR(255),
-            quiz1 FLOAT,
-            quiz2 FLOAT,
-            assignment1 FLOAT,
-            assignment2 FLOAT,
-            midterm FLOAT,
+            quiz1 FLOAT DEFAULT 0,
+            quiz2 FLOAT DEFAULT 0,
+            assignment1 FLOAT DEFAULT 0,
+            assignment2 FLOAT DEFAULT 0,
+            midterm FLOAT DEFAULT 0,
             risk_status VARCHAR(50),
             probability FLOAT,
             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """
     )
+    cursor.execute("SHOW COLUMNS FROM evaluations")
+    existing_columns = [col[0] for col in cursor.fetchall()]
+    
+    for col_name in ["final", "total_score", "gpa"]:
+        if col_name not in existing_columns:
+            cursor.execute(f"ALTER TABLE evaluations ADD COLUMN {col_name} FLOAT DEFAULT 0")
+
     conn.commit()
     cursor.close()
     conn.close()
@@ -112,7 +141,7 @@ init_db()
 
 
 # ============================================================
-# BASELINE ML MODEL
+# ML MODEL & HELPERS
 # ============================================================
 
 @st.cache_resource
@@ -128,24 +157,14 @@ def get_trained_model():
     df_train["total"] = df_train.sum(axis=1)
     y_train = (df_train["total"] < 37.5).astype(int)
 
-    model = RandomForestClassifier(
-        n_estimators=100,
-        random_state=42,
-        class_weight="balanced",
-    )
+    model = RandomForestClassifier(n_estimators=100, random_state=42, class_weight="balanced")
     model.fit(df_train[REQUIRED_COLS], y_train)
     return model
 
 model = get_trained_model()
 
-
-# ============================================================
-# MULTI-SUBJECT FILE PARSER
-# ============================================================
-
 def load_multi_subject_file(uploaded_file):
     filename = uploaded_file.name.lower()
-    
     if filename.endswith(".csv"):
         raw_df = pd.read_csv(uploaded_file, header=None)
     elif filename.endswith((".xlsx", ".xls")):
@@ -191,6 +210,7 @@ def load_multi_subject_file(uploaded_file):
             q2_idx = next((idx for key, idx in cols.items() if "quiz 2" in key or "q2" in key), None)
             asg_idx = next((idx for key, idx in cols.items() if "assignment" in key or "presentation" in key or "a1" in key), None)
             mid_idx = next((idx for key, idx in cols.items() if "midterm" in key or "mid" in key), None)
+            final_idx = next((idx for key, idx in cols.items() if "final" in key or "terminal" in key), None)
 
             sub_df["quiz1"] = pd.to_numeric(pd.Series(data_subset.iloc[:, q1_idx].values if q1_idx is not None else 0), errors="coerce").fillna(0)
             sub_df["quiz2"] = pd.to_numeric(pd.Series(data_subset.iloc[:, q2_idx].values if q2_idx is not None else 0), errors="coerce").fillna(0)
@@ -201,63 +221,56 @@ def load_multi_subject_file(uploaded_file):
 
             sub_df["midterm"] = pd.to_numeric(pd.Series(data_subset.iloc[:, mid_idx].values if mid_idx is not None else 0), errors="coerce").fillna(0)
             
+            if final_idx is not None:
+                sub_df["final"] = pd.to_numeric(pd.Series(data_subset.iloc[:, final_idx].values), errors="coerce").fillna(0)
+            else:
+                sub_df["final"] = 0.0
+            
             parsed_subjects_data[subj] = sub_df
 
         return parsed_subjects_data, "multi_subject"
-    
     else:
-        if filename.endswith(".csv"):
-            df = pd.read_csv(uploaded_file)
+        df = pd.read_csv(uploaded_file) if filename.endswith(".csv") else pd.read_excel(uploaded_file)
+        df.columns = [str(c).strip().lower() for c in df.columns]
+        
+        if "final" not in df.columns and "terminal" in df.columns:
+            df["final"] = df["terminal"]
+        elif "final" not in df.columns:
+            df["final"] = 0.0
         else:
-            df = pd.read_excel(uploaded_file)
-        return {"General Course": df}, "flat"
+            df["final"] = pd.to_numeric(df["final"], errors="coerce").fillna(0.0)
 
+        return {"General Course": df}, "flat"
 
 def save_batch_to_database(df, subject_name, batch_name):
     conn = get_db_connection()
     cursor = conn.cursor()
     for _, row in df.iterrows():
-        student_id = str(row.get("Student_ID", "Unknown"))
         cursor.execute(
             """
-            INSERT INTO evaluations (
-                batch_name, student_id, subject, quiz1, quiz2, assignment1, assignment2, midterm, risk_status, probability
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO evaluations (batch_name, student_id, subject, quiz1, quiz2, assignment1, assignment2, midterm, final, risk_status, probability)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
-                batch_name,
-                student_id,
-                subject_name,
-                float(row["quiz1"]),
-                float(row["quiz2"]),
-                float(row["assignment1"]),
-                float(row["assignment2"]),
-                float(row["midterm"]),
-                str(row["Evaluation"]),
-                float(row["Risk_Probability"]),
+                batch_name, 
+                str(row.get("Student_ID", row.get("student_id", "Unknown"))), 
+                subject_name, 
+                float(row.get("quiz1", 0)), 
+                float(row.get("quiz2", 0)), 
+                float(row.get("assignment1", 0)), 
+                float(row.get("assignment2", 0)), 
+                float(row.get("midterm", 0)), 
+                float(row.get("final", 0)), 
+                str(row.get("Evaluation", row.get("risk_status", row.get("Overall_Status", "No Risk")))), 
+                float(row.get("Risk_Probability", row.get("probability", 0.0)))
             ),
         )
     conn.commit()
     cursor.close()
     conn.close()
 
-
-def get_intervention(total_score, midterm):
-    recommendations = []
-    if midterm < 20:
-        recommendations.append("Priority counseling and midterm remediation.")
-    if total_score < 37.5:
-        recommendations.append("Assign remedial exercises and additional practice.")
-    if midterm >= 20 and total_score < 45:
-        recommendations.append("Monitor upcoming quizzes and assignments closely.")
-    if not recommendations:
-        recommendations.append("Continue normal academic monitoring.")
-    return " ".join(recommendations)
-
-
-def marks_to_gpa(total_marks):
-    percentage = (total_marks / 75.0) * 100
+def marks_to_gpa(total_marks, max_possible=75.0):
+    percentage = (total_marks / max_possible) * 100
     if percentage >= 85: return 4.0, "A+"
     elif percentage >= 80: return 4.0, "A"
     elif percentage >= 75: return 3.7, "B+"
@@ -267,414 +280,301 @@ def marks_to_gpa(total_marks):
     elif percentage >= 50: return 2.0, "D"
     else: return 0.0, "F"
 
+def color_risk_cells(val):
+    """Applies red styling for At Risk / F grades and green for No Risk / Passing grades."""
+    if isinstance(val, str):
+        val_lower = val.lower()
+        if "at risk" in val_lower or val == "F":
+            return "background-color: #fee2e2; color: #991b1b; font-weight: bold;"
+        elif "no risk" in val_lower or "pass" in val_lower or val in ["A+", "A", "B+", "B", "C+", "C", "D"]:
+            return "background-color: #dcfce7; color: #166534; font-weight: bold;"
+    return ""
 
-def color_risk_rows(row):
-    """Applies soft red styling for At Risk and soft green for No Risk."""
-    status = str(row.get("Evaluation", row.get("Overall_Status", "")))
-    if "At Risk" in status:
-        return ["background-color: #f8d7da; color: #721c24"] * len(row)
-    elif "No Risk" in status:
-        return ["background-color: #d4edda; color: #155724"] * len(row)
-    return [""] * len(row)
+def render_styled_dataframe(df):
+    try:
+        styled_df = df.style.map(color_risk_cells)
+        st.dataframe(styled_df, use_container_width=True, hide_index=True)
+    except Exception:
+        st.dataframe(df, use_container_width=True, hide_index=True)
+
+def convert_df_to_excel(df):
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Evaluation_Results")
+    return output.getvalue()
 
 
 # ============================================================
-# SIDEBAR NAVIGATION
+# BLUE HEADER & NAVIGATION BAR
 # ============================================================
 
-st.sidebar.title("🎓 EduGuard-AI")
-st.sidebar.markdown("---")
-page = st.sidebar.radio(
-    "Navigation Menu",
-    [
-        "🏠 Home",
-        "📊 Dashboard",
-        "📂 Batch Evaluation & CGPA",
-        "🔍 Single Student",
-        "🗃️ Database Logs & Batches",
-    ],
+st.markdown(
+    """
+    <div class="uni-header">
+        <h1>EduGuard-AI Academic Evaluation System</h1>
+        <p>University of Engineering and Technology (UET) Mardan — Faculty Decision Support & Analytics Portal</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
+pages = ["Home", "Dashboard", "Batch Evaluation & CGPA", "Single Student", "Database Logs & Batches"]
+
+cols = st.columns(len(pages))
+for i, p_name in enumerate(pages):
+    with cols[i]:
+        is_active = st.session_state.selected_page == p_name
+        btn_type = "primary" if is_active else "secondary"
+        if st.button(p_name, use_container_width=True, type=btn_type):
+            st.session_state.selected_page = p_name
+            st.rerun()
+
+page = st.session_state.selected_page
+st.divider()
+
 
 # ============================================================
-# PAGE 0 — HOME PAGE
+# PAGE ROUTING & VIEWS
 # ============================================================
 
-if page == "🏠 Home":
-    st.markdown(
-        """
-        <div class="hero-container">
-            <h1>Welcome to EduGuard-AI 🎓</h1>
-            <p>Advanced Academic Risk Evaluation & Multi-Course Semester CGPA Intelligence Platform</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    col1, col2 = st.columns(2)
+if page == "Home":
+    col1, col2 = st.columns([2, 1], gap="large")
     with col1:
-        st.subheader("🚀 Platform Overview")
         st.markdown(
             """
-            EduGuard-AI empowers educators and academic departments to seamlessly analyze student performance, 
-            predict academic risk using machine learning classifiers, compute semester-wide CGPAs, and generate 
-            actionable early intervention roadmaps.
-            
-            * **Automated Risk Scoring:** Evaluates quizzes, assignments, and midterms.
-            * **Multi-Subject Batch Processing:** Upload complex spreadsheets covering multiple courses at once.
-            * **Comprehensive CGPA Engine:** Calculates overall semester GPA and cumulative quality points instantly.
-            """
+            <div class="saas-card">
+                <h3>🏛️ Departmental Academic Management</h3>
+                <p>EduGuard-AI provides automated student performance monitoring, machine learning-driven risk evaluation, 
+                and comprehensive multi-course semester CGPA calculations for faculty members.</p>
+                <hr style="margin: 1.25rem 0; border: none; border-top: 1px solid #e2e8f0;">
+                <ul style="color: #334155; padding-left: 1.25rem; line-height: 1.6;">
+                    <li><b>Automated Risk Assessment:</b> Instantly classifies students at academic risk based on continuous assessments.</li>
+                    <li><b>Flexible File Parsing:</b> Supports standard department Excel/CSV grade sheets and batch ZIP archives.</li>
+                    <li><b>Institutional Reporting:</b> Securely logs all evaluation results directly to the institutional MySQL database.</li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
     with col2:
-        st.subheader("⚡ Quick Start")
-        st.markdown("Ready to evaluate student performance for the current semester?")
-        if st.button("🚀 Go to Batch Evaluation & Start Now", type="primary", use_container_width=True):
-            st.switch_page = "📂 Batch Evaluation & CGPA" # Streamlit state trick or prompt user
-            st.info("Please select **📂 Batch Evaluation & CGPA** from the sidebar menu on the left to upload your marksheet.")
+        st.markdown(
+            """
+            <div class="saas-card" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                <h3>Quick Actions</h3>
+                <p style="margin-bottom: 1.5rem; color: #64748b;">Begin batch evaluation or inspect logs.</p>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Open Batch Evaluation", use_container_width=True):
+            st.session_state.selected_page = "Batch Evaluation & CGPA"
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    st.divider()
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown("### 📊 Real-Time Analytics")
-        st.markdown("Instant visibility into department-wide risk percentages, grade distributions, and trends.")
-    with col2:
-        st.markdown("### 🛡️ Early Interventions")
-        st.markdown("Automated recommendation system flagging students needing priority counseling or remediation.")
-    with col3:
-        st.markdown("### 🗃️ Secure MySQL Storage")
-        st.markdown("All batch logs and student evaluations are stored securely in your connected MySQL database.")
-
-
-# ============================================================
-# PAGE 1 — DASHBOARD
-# ============================================================
-
-elif page == "📊 Dashboard":
-    st.header("📊 Executive Analytics Dashboard")
-    st.markdown("High-level overview of student performance records stored in the database.")
-    
+elif page == "Dashboard":
+    st.subheader("📊 Department Executive Analytics")
     conn = get_db_connection()
     logs_df = pd.read_sql_query("SELECT * FROM evaluations ORDER BY timestamp DESC", conn)
     conn.close()
 
     total_evaluations = len(logs_df)
-    if total_evaluations > 0:
-        at_risk = int((logs_df["risk_status"] == "At Risk").sum())
-        safe = int((logs_df["risk_status"] == "No Risk").sum())
-        risk_percentage = (at_risk / total_evaluations) * 100
-    else:
-        at_risk, safe, risk_percentage = 0, 0, 0
+    at_risk = int((logs_df["risk_status"] == "At Risk").sum()) if total_evaluations > 0 else 0
+    safe = int((logs_df["risk_status"] == "No Risk").sum()) if total_evaluations > 0 else 0
+    risk_pct = (at_risk / total_evaluations * 100) if total_evaluations > 0 else 0
 
     col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Total Evaluations", total_evaluations, delta="Records")
-    with col2:
-        st.metric("Students At Risk", at_risk, delta_color="inverse")
-    with col3:
-        st.metric("No Risk Students", safe)
-    with col4:
-        st.metric("Department Risk Rate", f"{risk_percentage:.1f}%")
+    with col1: st.metric("Total Evaluations", total_evaluations)
+    with col2: st.metric("Students At Risk", at_risk)
+    with col3: st.metric("Passing Students", safe)
+    with col4: st.metric("At-Risk Ratio", f"{risk_pct:.1f}%")
 
     if not logs_df.empty:
         st.divider()
         col1, col2 = st.columns(2)
         with col1:
-            st.subheader("Risk Distribution Status")
+            st.markdown("**Risk Status Breakdown**")
             st.bar_chart(logs_df["risk_status"].value_counts())
         with col2:
-            st.subheader("Evaluations by Batch Tag")
-            if "batch_name" in logs_df.columns:
-                st.bar_chart(logs_df["batch_name"].value_counts())
-        
+            st.markdown("**Evaluations by Batch**")
+            st.bar_chart(logs_df["batch_name"].value_counts())
+
         st.divider()
-        st.subheader("Recent Evaluation Logs")
-        styled_logs = logs_df.head(25).style.apply(
-            lambda r: ["background-color: #f8d7da; color: #721c24" if r["risk_status"] == "At Risk" else "background-color: #d4edda; color: #155724" for _ in r], 
-            axis=1
+        st.markdown("**Recent Database Activity Logs**")
+        render_styled_dataframe(logs_df.head(25))
+        
+        excel_data = convert_df_to_excel(logs_df)
+        st.download_button(
+            label="📥 Download Full Logs as Excel",
+            data=excel_data,
+            file_name="EduGuard_AI_All_Logs.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        st.dataframe(styled_logs, use_container_width=True, height=400)
     else:
-        st.info("No student evaluations logged yet. Navigate to **📂 Batch Evaluation & CGPA** to begin.")
+        st.info("No evaluation logs found in the database. Upload a batch to populate data.")
 
-
-# ============================================================
-# PAGE 2 — BATCH EVALUATION & CGPA
-# ============================================================
-
-elif page == "📂 Batch Evaluation & CGPA":
-    st.header("📂 Batch Semester Student Evaluation & CGPA Calculator")
-    st.markdown("Upload your semester marksheet spreadsheet, tag your batch, and run evaluations.")
-
-    batch_name = st.text_input("🏷️ Enter Batch / Semester Tag", "Fall-2026-CS-4")
-    uploaded_file = st.file_uploader("Upload Semester Dataset (CSV, Excel, or ZIP)", type=["csv", "xlsx", "xls", "zip"])
+elif page == "Batch Evaluation & CGPA":
+    st.subheader("📂 Batch Semester Student Evaluation & CGPA Calculator")
+    col_b1, col_b2 = st.columns([1, 2])
+    with col_b1: batch_name = st.text_input("Batch Tag / ID", "Fall-2026-CS-4")
+    with col_b2: uploaded_file = st.file_uploader("Upload Course Grades Dataset (CSV, Excel, or ZIP)", type=["csv", "xlsx", "xls", "zip"])
 
     if uploaded_file is not None:
         try:
             subjects_data, file_type = load_multi_subject_file(uploaded_file)
-            st.success(f"Successfully loaded dataset ({file_type} layout). Total subjects detected: {len(subjects_data)}")
+            st.success(f"Successfully loaded dataset. Detected courses: {len(subjects_data)}")
 
-            st.sidebar.divider()
-            st.sidebar.subheader("Evaluation Scope Options")
-            eval_mode = st.sidebar.radio(
-                "Choose Mode", ["Single Course Evaluation", "Overall CGPA & Multi-Course"]
-            )
+            eval_mode = st.radio("Evaluation Mode", ["Single Course Evaluation", "Overall CGPA & Multi-Course"], horizontal=True)
 
             if eval_mode == "Single Course Evaluation":
-                selected_subject = st.sidebar.selectbox("Select Course for Deep-Dive", list(subjects_data.keys()))
+                selected_subject = st.selectbox("Select Course", list(subjects_data.keys()))
                 input_df = subjects_data[selected_subject]
-
                 if "Student_ID" not in input_df.columns:
                     input_df["Student_ID"] = [f"STUDENT-{i+1:03d}" for i in range(len(input_df))]
 
-                st.subheader(f"Preview: {selected_subject} ({len(input_df)} Students)")
-                st.dataframe(input_df.head(10), use_container_width=True, height=300)
+                st.markdown(f"**Course Preview: {selected_subject} ({len(input_df)} Students)**")
+                render_styled_dataframe(input_df.head(10))
 
-                if st.button(f"🤖 Run AI Evaluation for {selected_subject} ({batch_name})", type="primary"):
-                    with st.spinner("Running machine learning risk evaluation..."):
-                        features = input_df[REQUIRED_COLS]
-                        predictions = model.predict(features)
-                        probabilities = model.predict_proba(features)[:, 1]
+                if st.button(f"Run AI Evaluation for {selected_subject}"):
+                    features = input_df[REQUIRED_COLS]
+                    preds = model.predict(features)
+                    probs = model.predict_proba(features)[:, 1]
 
-                        input_df["Evaluation"] = ["At Risk" if p == 1 else "No Risk" for p in predictions]
-                        input_df["Risk_Probability"] = (probabilities * 100).round(1)
-                        input_df["Total_Score"] = input_df[REQUIRED_COLS].sum(axis=1)
-                        
-                        gpa_list, grade_list = [], []
-                        for _, r in input_df.iterrows():
-                            g, gr = marks_to_gpa(r["Total_Score"])
-                            gpa_list.append(g)
-                            grade_list.append(gr)
-                        input_df["GPA"] = gpa_list
-                        input_df["Grade"] = grade_list
+                    input_df["Evaluation"] = ["At Risk" if p == 1 else "No Risk" for p in preds]
+                    input_df["Risk_Probability"] = (probs * 100).round(1)
+                    
+                    has_final = "final" in input_df.columns and (input_df["final"] > 0).any()
+                    final_vals = input_df["final"] if "final" in input_df.columns else 0.0
+                    input_df["Total_Score"] = input_df[REQUIRED_COLS].sum(axis=1) + final_vals
+                    
+                    max_scale = 125.0 if has_final else 75.0
+                    gpa_l, grade_l = [], []
+                    for _, r in input_df.iterrows():
+                        g, gr = marks_to_gpa(r["Total_Score"], max_possible=max_scale)
+                        gpa_l.append(g); grade_l.append(gr)
+                    input_df["GPA"] = gpa_l
+                    input_df["Grade"] = grade_l
 
-                        input_df["Recommendation"] = input_df.apply(
-                            lambda row: get_intervention(row["Total_Score"], row["midterm"]), axis=1
-                        )
+                    # Mark At Risk if GPA < 2.0 or model triggered
+                    input_df.loc[input_df["GPA"] < 2.0, "Evaluation"] = "At Risk"
 
-                        save_batch_to_database(input_df, selected_subject, batch_name)
+                    save_batch_to_database(input_df, selected_subject, batch_name)
+                    st.success("Evaluation completed and results saved to database.")
+                    render_styled_dataframe(input_df)
 
-                    st.success(f"Evaluation for {selected_subject} under batch '{batch_name}' saved to MySQL!")
-
-                    risk_count = int((input_df["Evaluation"] == "At Risk").sum())
-                    safe_count = int((input_df["Evaluation"] == "No Risk").sum())
-
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("Total Students", len(input_df))
-                    with col2:
-                        st.metric("At Risk", risk_count, delta_color="inverse")
-                    with col3:
-                        st.metric("No Risk", safe_count)
-
-                    st.subheader("Evaluation Results (Color-Coded)")
-                    styled_df = input_df.style.apply(color_risk_rows, axis=1)
-                    st.dataframe(styled_df, use_container_width=True, height=450)
-
-                    output = io.BytesIO()
-                    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-                        input_df.to_excel(writer, index=False, sheet_name="Evaluations")
-                    processed_data = output.getvalue()
-
+                    excel_bytes = convert_df_to_excel(input_df)
                     st.download_button(
-                        label=f"📥 Download Report for {selected_subject} ({batch_name})",
-                        data=processed_data,
-                        file_name=f"EduGuard_{batch_name}_{selected_subject.replace(' ', '_')}_Report.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        label=f"📥 Download {selected_subject} Results (Excel)",
+                        data=excel_bytes,
+                        file_name=f"{batch_name}_{selected_subject}_Evaluation.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
 
             else:
-                st.subheader("🌐 Overall Semester CGPA & Multi-Course Analysis")
-                selected_courses = st.sidebar.multiselect(
-                    "Select Courses to Include in CGPA", 
-                    list(subjects_data.keys()), 
-                    default=list(subjects_data.keys())
-                )
-                credit_hours_per_course = st.sidebar.number_input("Credit Hours per Course", 1, 4, 3)
+                st.markdown("**Overall Semester CGPA Calculation**")
+                selected_courses = st.multiselect("Select Courses for CGPA Calculation", list(subjects_data.keys()), default=list(subjects_data.keys()))
+                credit_hours = st.number_input("Credit Hours per Course", 1, 4, 3)
 
-                if selected_courses and st.button(f"📊 Calculate Overall CGPA & Save Batch ({batch_name})", type="primary"):
-                    with st.spinner("Aggregating multi-course scores and calculating CGPA..."):
-                        base_students = subjects_data[selected_courses[0]][["Student_ID", "Student_Name"]].copy()
-                        
-                        cgpa_records = []
-                        for _, student in base_students.iterrows():
-                            sid = student["Student_ID"]
-                            sname = student["Student_Name"]
-                            
-                            total_quality_points = 0.0
-                            total_credits = 0.0
-                            course_breakdown = {}
-                            overall_risk_flag = False
-
-                            for course in selected_courses:
-                                course_df = subjects_data[course]
-                                student_row = course_df[course_df["Student_ID"] == sid]
-                                
-                                if not student_row.empty:
-                                    r = student_row.iloc[0]
-                                    t_score = r["quiz1"] + r["quiz2"] + r["assignment1"] + r["assignment2"] + r["midterm"]
-                                    
-                                    sample = pd.DataFrame([[r["quiz1"], r["quiz2"], r["assignment1"], r["assignment2"], r["midterm"]]], columns=REQUIRED_COLS)
-                                    pred = model.predict(sample)[0]
-                                    if pred == 1:
-                                        overall_risk_flag = True
-
-                                    gp, grade = marks_to_gpa(t_score)
-                                    total_quality_points += gp * credit_hours_per_course
-                                    total_credits += credit_hours_per_course
-                                    course_breakdown[f"{course} (Marks)"] = t_score
-                                    course_breakdown[f"{course} (Grade)"] = grade
-
-                            cgpa = round(total_quality_points / total_credits, 2) if total_credits > 0 else 0.0
-                            overall_status = "At Risk" if overall_risk_flag or cgpa < 2.0 else "No Risk"
-
-                            record = {
-                                "Student_ID": sid,
-                                "Student_Name": sname,
-                                "CGPA": cgpa,
-                                "Overall_Status": overall_status
-                            }
-                            record.update(course_breakdown)
-                            cgpa_records.append(record)
-
-                        cgpa_df = pd.DataFrame(cgpa_records)
-
-                    st.success("Overall CGPA calculation complete!")
+                if selected_courses and st.button("Calculate Semester CGPA"):
+                    base_students = subjects_data[selected_courses[0]][["Student_ID", "Student_Name"]].copy()
+                    cgpa_records = []
                     
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("Total Evaluated Students", len(cgpa_df))
-                    with col2:
-                        st.metric("Average Semester CGPA", f"{cgpa_df['CGPA'].mean():.2f}")
-                    with col3:
-                        st.metric("Overall At Risk", int((cgpa_df["Overall_Status"] == "At Risk").sum()), delta_color="inverse")
+                    for _, student in base_students.iterrows():
+                        sid, sname = student["Student_ID"], student["Student_Name"]
+                        total_qp, total_cr = 0.0, 0.0
+                        c_breakdown, risk_flag = {}, False
 
-                    st.subheader("Comprehensive Semester CGPA Summary (CGPA First)")
-                    styled_cgpa_df = cgpa_df.style.apply(color_risk_rows, axis=1)
-                    st.dataframe(styled_cgpa_df, use_container_width=True, height=500)
+                        for course in selected_courses:
+                            cdf = subjects_data[course]
+                            srow = cdf[cdf["Student_ID"] == sid]
+                            if not srow.empty:
+                                r = srow.iloc[0]
+                                final_val = r.get("final", 0.0)
+                                t_score = r["quiz1"] + r["quiz2"] + r["assignment1"] + r["assignment2"] + r["midterm"] + final_val
+                                
+                                sample = pd.DataFrame([[r["quiz1"], r["quiz2"], r["assignment1"], r["assignment2"], r["midterm"]]], columns=REQUIRED_COLS)
+                                if model.predict(sample)[0] == 1: risk_flag = True
+                                
+                                max_scale = 125.0 if final_val > 0 else 75.0
+                                gp, grade = marks_to_gpa(t_score, max_possible=max_scale)
+                                total_qp += gp * credit_hours
+                                total_cr += credit_hours
+                                c_breakdown[f"{course} (Grade)"] = grade
 
-                    output_cgpa = io.BytesIO()
-                    with pd.ExcelWriter(output_cgpa, engine="openpyxl") as writer:
-                        cgpa_df.to_excel(writer, index=False, sheet_name="CGPA_Summary")
-                    cgpa_processed = output_cgpa.getvalue()
+                        cgpa = round(total_qp / total_cr, 2) if total_cr > 0 else 0.0
+                        # Mark At Risk if overall CGPA < 2.0 or model risk flag triggered
+                        overall_status = "At Risk" if risk_flag or cgpa < 2.0 else "No Risk"
+                        
+                        rec = {"Student_ID": sid, "Student_Name": sname, "CGPA": cgpa, "Overall_Status": overall_status}
+                        rec.update(c_breakdown)
+                        cgpa_records.append(rec)
 
+                    cgpa_df = pd.DataFrame(cgpa_records)
+                    st.success("CGPA computation completed successfully.")
+                    render_styled_dataframe(cgpa_df)
+
+                    excel_bytes = convert_df_to_excel(cgpa_df)
                     st.download_button(
-                        label=f"📥 Download Overall CGPA Report ({batch_name})",
-                        data=cgpa_processed,
-                        file_name=f"EduGuard_{batch_name}_Overall_CGPA_Report.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        label="📥 Download Semester CGPA Report (Excel)",
+                        data=excel_bytes,
+                        file_name=f"{batch_name}_Semester_CGPA_Report.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
-                elif not selected_courses:
-                    st.warning("Please select at least one course from the sidebar.")
 
         except Exception as e:
-                st.error(f"Dataset processing failed: {e}")
+            st.error(f"Error processing dataset: {e}")
 
-
-# ============================================================
-# PAGE 3 — SINGLE STUDENT
-# ============================================================
-
-elif page == "🔍 Single Student":
-    st.header("🔍 Individual Student Risk Assessment")
-    st.markdown("Evaluate a single student profile manually.")
-    
+elif page == "Single Student":
+    st.subheader("🔍 Individual Student Assessment")
     col1, col2 = st.columns(2)
     with col1:
-        batch_name = st.text_input("Batch / Semester Tag", "Fall-2026-CS-4")
-        student_id = st.text_input("Student Registration ID", "UET-2026-001")
-        subject_name = st.text_input("Subject Name", "Artificial Intelligence")
-        quiz1 = st.number_input("Quiz 1 Marks (Max 10)", 0.0, 10.0, 6.0)
+        batch_name = st.text_input("Batch Tag", "Fall-2026-CS-4")
+        student_id = st.text_input("Student ID", "UET-2026-001")
+        subject = st.text_input("Subject Name", "Artificial Intelligence")
+        quiz1 = st.number_input("Quiz 1 (Max: 10)", 0.0, 10.0, 7.0)
+        quiz2 = st.number_input("Quiz 2 (Max: 10)", 0.0, 10.0, 8.0)
     with col2:
-        quiz2 = st.number_input("Quiz 2 Marks (Max 10)", 0.0, 10.0, 7.0)
-        assignment1 = st.number_input("Assignment 1 Marks (Max 7.5)", 0.0, 15.0, 5.0)
-        assignment2 = st.number_input("Assignment 2 Marks (Max 7.5)", 0.0, 15.0, 6.0)
-        midterm = st.number_input("Midterm Marks (Max 40)", 0.0, 40.0, 22.0)
+        assignment1 = st.number_input("Assignment 1 (Max: 7.5)", 0.0, 15.0, 6.0)
+        assignment2 = st.number_input("Assignment 2 (Max: 7.5)", 0.0, 15.0, 6.5)
+        midterm = st.number_input("Midterm Examination (Max: 40)", 0.0, 40.0, 28.0)
+        final = st.number_input("Final Term Examination (Optional - Max: 50)", 0.0, 50.0, 0.0)
 
-    if st.button("🤖 Evaluate Student Profile", type="primary"):
+    if st.button("Evaluate Student Profile"):
         sample = pd.DataFrame([[quiz1, quiz2, assignment1, assignment2, midterm]], columns=REQUIRED_COLS)
-        prediction = model.predict(sample)[0]
-        probability = model.predict_proba(sample)[0][1] * 100
-        total_score = quiz1 + quiz2 + assignment1 + assignment2 + midterm
-        gpa, grade = marks_to_gpa(total_score)
-        status = "At Risk" if prediction == 1 else "No Risk"
-        recommendation = get_intervention(total_score, midterm)
+        pred = model.predict(sample)[0]
+        prob = model.predict_proba(sample)[0][1] * 100
+        
+        max_scale = 125.0 if final > 0 else 75.0
+        total = quiz1 + quiz2 + assignment1 + assignment2 + midterm + final
+        gpa, grade = marks_to_gpa(total, max_possible=max_scale)
+        
+        status = "At Risk" if pred == 1 or gpa < 2.0 else "No Risk"
 
-        st.divider()
-        if status == "At Risk":
-            st.error(f"⚠️ AT RISK STATUS — Estimated Risk Probability: {probability:.1f}%")
-        else:
-            st.success(f"✅ NO RISK STATUS — Estimated Risk Probability: {probability:.1f}%")
+        if status == "At Risk": st.error(f"⚠️ Status: AT RISK (GPA < 2.0 or Model Triggered) — Risk Probability: {prob:.1f}%")
+        else: st.success(f"✅ Status: PASS / NO RISK — Risk Probability: {prob:.1f}%")
 
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Total Score", f"{total_score:.1f} / 75")
-        with col2:
-            st.metric("Course Grade", f"{grade} ({gpa:.1f})")
-        with col3:
-            st.metric("Risk Probability", f"{probability:.1f}%")
-        with col4:
-            st.metric("Evaluation", status)
+        c1, c2, c3, c4 = st.columns(4)
+        with c1: st.metric("Total Score", f"{total:.1f} / {max_scale}")
+        with c2: st.metric("Course Grade", f"{grade} ({gpa:.1f})")
+        with c3: st.metric("Risk Probability", f"{prob:.1f}%")
+        with c4: st.metric("Evaluation Status", status)
 
-        st.subheader("🎯 Recommended Intervention")
-        st.info(recommendation)
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            INSERT INTO evaluations (batch_name, student_id, subject, quiz1, quiz2, assignment1, assignment2, midterm, risk_status, probability)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """,
-            (batch_name, student_id, subject_name, float(quiz1), float(quiz2), float(assignment1), float(assignment2), float(midterm), status, float(probability)),
-        )
-        conn.commit()
-        cursor.close()
-        conn.close()
-        st.success("Evaluation successfully logged to MySQL database.")
-
-
-# ============================================================
-# PAGE 4 — DATABASE LOGS & BATCHES
-# ============================================================
-
-elif page == "🗃️ Database Logs & Batches":
-    st.header("🗃️ Batch & Semester Evaluation Logs")
-    st.markdown("Inspect historical records stored in your MySQL database.")
-    
+elif page == "Database Logs & Batches":
+    st.subheader("🗃️ Institutional Evaluation Logs")
     conn = get_db_connection()
     logs_df = pd.read_sql_query("SELECT * FROM evaluations ORDER BY timestamp DESC", conn)
     conn.close()
 
     if logs_df.empty:
-        st.info("No evaluation records found in database.")
+        st.info("No records found in the database.")
     else:
         batches = ["All Batches"] + list(logs_df["batch_name"].dropna().unique())
-        selected_batch_filter = st.selectbox("📂 Filter by Batch / Semester", batches)
+        selected_batch = st.selectbox("Filter by Batch", batches)
+        filtered = logs_df if selected_batch == "All Batches" else logs_df[logs_df["batch_name"] == selected_batch]
+        render_styled_dataframe(filtered)
 
-        filtered_df = logs_df.copy()
-        if selected_batch_filter != "All Batches":
-            filtered_df = filtered_df[filtered_df["batch_name"] == selected_batch_filter]
-
-        search = st.text_input("🔎 Search Student Registration ID")
-        if search:
-            filtered_df = filtered_df[filtered_df["student_id"].astype(str).str.contains(search, case=False, na=False)]
-
-        risk_filter = st.selectbox("Filter by Risk Status", ["All", "At Risk", "No Risk"])
-        if risk_filter != "All":
-            filtered_df = filtered_df[filtered_df["risk_status"] == risk_filter]
-
-        st.write(f"Showing {len(filtered_df)} records for batch: **{selected_batch_filter}**")
-        
-        styled_filtered_df = filtered_df.style.apply(
-            lambda r: ["background-color: #f8d7da; color: #721c24" if r["risk_status"] == "At Risk" else "background-color: #d4edda; color: #155724" for _ in r], 
-            axis=1
-        )
-        st.dataframe(styled_filtered_df, use_container_width=True, height=500)
-
-        csv_data = filtered_df.to_csv(index=False)
+        excel_bytes = convert_df_to_excel(filtered)
         st.download_button(
-            label=f"📥 Download Logs for [{selected_batch_filter}]",
-            data=csv_data,
-            file_name=f"EduGuard_{selected_batch_filter}_Logs.csv",
-            mime="text/csv",
+            label="📥 Download Filtered Logs (Excel)",
+            data=excel_bytes,
+            file_name=f"EduGuard_Logs_{selected_batch.replace(' ', '_')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
