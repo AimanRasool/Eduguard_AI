@@ -88,7 +88,7 @@ st.markdown(
 
 
 # ============================================================
-# SESSION STATE & DYNAMIC DATABASE MIGRATION
+# SESSION STATE & SAFE DATABASE CONNECTION
 # ============================================================
 
 if "selected_page" not in st.session_state:
@@ -97,46 +97,58 @@ if "selected_page" not in st.session_state:
 REQUIRED_COLS = ["quiz1", "quiz2", "assignment1", "assignment2", "midterm"]
 
 def get_db_connection():
-    db_config = st.secrets["mysql"]
-    return mysql.connector.connect(
-        host=db_config["host"],
-        port=db_config.get("port", 3306),
-        database=db_config["database"],
-        user=db_config["username"],
-        password=db_config["password"]
-    )
+    try:
+        if "mysql" not in st.secrets:
+            return None
+        db_config = st.secrets["mysql"]
+        return mysql.connector.connect(
+            host=db_config["host"],
+            port=db_config.get("port", 3306),
+            database=db_config["database"],
+            user=db_config["username"],
+            password=db_config["password"],
+            connection_timeout=5
+        )
+    except Exception:
+        return None
 
 def init_db():
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS evaluations (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            batch_name VARCHAR(255),
-            student_id VARCHAR(100),
-            subject VARCHAR(255),
-            quiz1 FLOAT DEFAULT 0,
-            quiz2 FLOAT DEFAULT 0,
-            assignment1 FLOAT DEFAULT 0,
-            assignment2 FLOAT DEFAULT 0,
-            midterm FLOAT DEFAULT 0,
-            risk_status VARCHAR(50),
-            probability FLOAT,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    if not conn:
+        return
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS evaluations (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                batch_name VARCHAR(255),
+                student_id VARCHAR(100),
+                subject VARCHAR(255),
+                quiz1 FLOAT DEFAULT 0,
+                quiz2 FLOAT DEFAULT 0,
+                assignment1 FLOAT DEFAULT 0,
+                assignment2 FLOAT DEFAULT 0,
+                midterm FLOAT DEFAULT 0,
+                risk_status VARCHAR(50),
+                probability FLOAT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
         )
-        """
-    )
-    cursor.execute("SHOW COLUMNS FROM evaluations")
-    existing_columns = [col[0] for col in cursor.fetchall()]
-    
-    for col_name in ["final", "total_score", "gpa"]:
-        if col_name not in existing_columns:
-            cursor.execute(f"ALTER TABLE evaluations ADD COLUMN {col_name} FLOAT DEFAULT 0")
+        cursor.execute("SHOW COLUMNS FROM evaluations")
+        existing_columns = [col[0] for col in cursor.fetchall()]
+        
+        for col_name in ["final", "total_score", "gpa"]:
+            if col_name not in existing_columns:
+                cursor.execute(f"ALTER TABLE evaluations ADD COLUMN {col_name} FLOAT DEFAULT 0")
 
-    conn.commit()
-    cursor.close()
-    conn.close()
+        conn.commit()
+        cursor.close()
+    except Exception:
+        pass
+    finally:
+        conn.close()
 
 init_db()
 
@@ -245,30 +257,36 @@ def load_multi_subject_file(uploaded_file):
 
 def save_batch_to_database(df, subject_name, batch_name):
     conn = get_db_connection()
-    cursor = conn.cursor()
-    for _, row in df.iterrows():
-        cursor.execute(
-            """
-            INSERT INTO evaluations (batch_name, student_id, subject, quiz1, quiz2, assignment1, assignment2, midterm, final, risk_status, probability)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """,
-            (
-                batch_name, 
-                str(row.get("Student_ID", row.get("student_id", "Unknown"))), 
-                subject_name, 
-                float(row.get("quiz1", 0)), 
-                float(row.get("quiz2", 0)), 
-                float(row.get("assignment1", 0)), 
-                float(row.get("assignment2", 0)), 
-                float(row.get("midterm", 0)), 
-                float(row.get("final", 0)), 
-                str(row.get("Evaluation", row.get("risk_status", row.get("Overall_Status", "No Risk")))), 
-                float(row.get("Risk_Probability", row.get("probability", 0.0)))
-            ),
-        )
-    conn.commit()
-    cursor.close()
-    conn.close()
+    if not conn:
+        return
+    try:
+        cursor = conn.cursor()
+        for _, row in df.iterrows():
+            cursor.execute(
+                """
+                INSERT INTO evaluations (batch_name, student_id, subject, quiz1, quiz2, assignment1, assignment2, midterm, final, risk_status, probability)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    batch_name, 
+                    str(row.get("Student_ID", row.get("student_id", "Unknown"))), 
+                    subject_name, 
+                    float(row.get("quiz1", 0)), 
+                    float(row.get("quiz2", 0)), 
+                    float(row.get("assignment1", 0)), 
+                    float(row.get("assignment2", 0)), 
+                    float(row.get("midterm", 0)), 
+                    float(row.get("final", 0)), 
+                    str(row.get("Evaluation", row.get("risk_status", row.get("Overall_Status", "No Risk")))), 
+                    float(row.get("Risk_Probability", row.get("probability", 0.0)))
+                ),
+            )
+        conn.commit()
+        cursor.close()
+    except Exception:
+        pass
+    finally:
+        conn.close()
 
 def marks_to_gpa(total_marks, max_possible=75.0):
     percentage = (total_marks / max_possible) * 100
@@ -282,7 +300,6 @@ def marks_to_gpa(total_marks, max_possible=75.0):
     else: return 0.0, "F"
 
 def color_risk_cells(val):
-    """Applies red styling for At Risk / F grades and green for No Risk / Passing grades."""
     if isinstance(val, str):
         val_lower = val.lower()
         if "at risk" in val_lower or val == "F":
@@ -374,8 +391,11 @@ if page == "Home":
 elif page == "Dashboard":
     st.subheader("📊 Department Executive Analytics")
     conn = get_db_connection()
-    logs_df = pd.read_sql_query("SELECT * FROM evaluations ORDER BY timestamp DESC", conn)
-    conn.close()
+    if conn:
+        logs_df = pd.read_sql_query("SELECT * FROM evaluations ORDER BY timestamp DESC", conn)
+        conn.close()
+    else:
+        logs_df = pd.DataFrame()
 
     total_evaluations = len(logs_df)
     at_risk = int((logs_df["risk_status"] == "At Risk").sum()) if total_evaluations > 0 else 0
@@ -410,7 +430,7 @@ elif page == "Dashboard":
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     else:
-        st.info("No evaluation logs found in the database. Upload a batch to populate data.")
+        st.warning("⚠️ Database connection is not available or no evaluation logs found. Make sure your MySQL secrets are configured correctly if you want to store logs.")
 
 elif page == "Batch Evaluation & CGPA":
     st.subheader("📂 Batch Semester Student Evaluation & CGPA Calculator")
@@ -454,11 +474,10 @@ elif page == "Batch Evaluation & CGPA":
                     input_df["GPA"] = gpa_l
                     input_df["Grade"] = grade_l
 
-                    # Mark At Risk if GPA < 2.0 or model triggered
                     input_df.loc[input_df["GPA"] < 2.0, "Evaluation"] = "At Risk"
 
                     save_batch_to_database(input_df, selected_subject, batch_name)
-                    st.success("Evaluation completed and results saved to database.")
+                    st.success("Evaluation completed successfully.")
                     render_styled_dataframe(input_df)
 
                     excel_bytes = convert_df_to_excel(input_df)
@@ -501,7 +520,6 @@ elif page == "Batch Evaluation & CGPA":
                                 c_breakdown[f"{course} (Grade)"] = grade
 
                         cgpa = round(total_qp / total_cr, 2) if total_cr > 0 else 0.0
-                        # Mark At Risk if overall CGPA < 2.0 or model risk flag triggered
                         overall_status = "At Risk" if risk_flag or cgpa < 2.0 else "No Risk"
                         
                         rec = {"Student_ID": sid, "Student_Name": sname, "CGPA": cgpa, "Overall_Status": overall_status}
@@ -561,11 +579,14 @@ elif page == "Single Student":
 elif page == "Database Logs & Batches":
     st.subheader("🗃️ Institutional Evaluation Logs")
     conn = get_db_connection()
-    logs_df = pd.read_sql_query("SELECT * FROM evaluations ORDER BY timestamp DESC", conn)
-    conn.close()
+    if conn:
+        logs_df = pd.read_sql_query("SELECT * FROM evaluations ORDER BY timestamp DESC", conn)
+        conn.close()
+    else:
+        logs_df = pd.DataFrame()
 
     if logs_df.empty:
-        st.info("No records found in the database.")
+        st.warning("⚠️ No database connection or records found. Please check your MySQL database configuration in Streamlit Secrets.")
     else:
         batches = ["All Batches"] + list(logs_df["batch_name"].dropna().unique())
         selected_batch = st.selectbox("Filter by Batch", batches)
