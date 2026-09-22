@@ -1049,7 +1049,7 @@ elif current_page == "Single Student":
   )
 
   tab_search, tab_add = st.tabs(
-      ["<b>Search Existing Student</b>", "<b>Add New Student Record</b>"]
+      ["Search Existing Student", "Add New Student Record"]
   )
 
   with tab_search:
