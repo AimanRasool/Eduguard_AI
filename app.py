@@ -1,3 +1,737 @@
+# # import base64
+# # import os
+# # import pandas as pd
+# # import streamlit as st
+# # from utils import highlight_risk_rows, send_bulk_performance_emails
+
+# # # ==========================================
+# # # PAGE CONFIGURATION
+# # # ==========================================
+# # st.set_page_config(
+# #     page_title="EduGuard-AI | UET Mardan",
+# #     page_icon="🎓",
+# #     layout="wide",
+# #     initial_sidebar_state="collapsed",
+# # )
+
+
+# # # ==========================================
+# # # HELPER FUNCTIONS
+# # # ==========================================
+# # def get_base64_image(image_path):
+# #   if os.path.exists(image_path):
+# #     with open(image_path, "rb") as img_file:
+# #       return base64.b64encode(img_file.read()).decode("utf-8")
+# #   return ""
+
+
+# # def calculate_cgpa_and_grades(df, selected_courses, credit_hours_dict):
+# #   """Calculates individual course grade points, SGPA, and Risk status."""
+# #   updated_df = df.copy()
+
+# #   sgpas = []
+# #   eval_statuses = []
+
+# #   for _, row in updated_df.iterrows():
+# #     total_quality_points = 0.0
+# #     total_credits = 0.0
+# #     min_marks = 100.0
+
+# #     for course in selected_courses:
+# #       marks = pd.to_numeric(row.get(course, 0), errors="coerce")
+# #       if pd.isna(marks):
+# #         marks = 0.0
+# #       if marks < min_marks:
+# #         min_marks = marks
+
+# #       # Standard grading conversion
+# #       if marks >= 85:
+# #         gp = 4.0
+# #       elif marks >= 80:
+# #         gp = 3.7
+# #       elif marks >= 75:
+# #         gp = 3.3
+# #       elif marks >= 70:
+# #         gp = 3.0
+# #       elif marks >= 65:
+# #         gp = 2.7
+# #       elif marks >= 60:
+# #         gp = 2.3
+# #       elif marks >= 55:
+# #         gp = 2.0
+# #       elif marks >= 50:
+# #         gp = 1.0
+# #       else:
+# #         gp = 0.0
+
+# #       credits = credit_hours_dict.get(course, 3.0)
+# #       total_quality_points += gp * credits
+# #       total_credits += credits
+
+# #     sgpa = (
+# #         round(total_quality_points / total_credits, 2)
+# #         if total_credits > 0
+# #         else 0.0
+# #     )
+# #     sgpas.append(sgpa)
+
+# #     # Risk criteria: min marks below 35 or SGPA below 2.0
+# #     if min_marks < 35 or sgpa < 2.0:
+# #       eval_statuses.append("At Risk")
+# #     else:
+# #       eval_statuses.append("No Risk")
+
+# #   updated_df["SGPA / CGPA"] = sgpas
+# #   updated_df["Evaluation"] = eval_statuses
+# #   return updated_df
+
+
+# # # ==========================================
+# # # HEADER & FOOTER COMPONENTS (OFFICIAL UET BLUE THEME)
+# # # ==========================================
+# # def render_header():
+# #   st.markdown(
+# #       """
+# #         <style>
+# #             .edu-header {
+# #                 background: linear-gradient(135deg, #0b3c5d 0%, #1d2d50 100%);
+# #                 color: white;
+# #                 padding: 20px 30px;
+# #                 border-radius: 10px;
+# #                 box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+# #                 margin-bottom: 20px;
+# #                 border-left: 6px solid #f39c12;
+# #             }
+# #             .edu-header h2 {
+# #                 margin: 0;
+# #                 font-size: 24px;
+# #                 font-weight: 700;
+# #                 letter-spacing: 0.5px;
+# #             }
+# #             .edu-header p {
+# #                 margin: 5px 0 0 0;
+# #                 font-size: 14px;
+# #                 color: #dcdcdc;
+# #             }
+# #             .stButton > button {
+# #                 width: 100%;
+# #                 background-color: #0b3c5d;
+# #                 color: white;
+# #                 border: 1px solid #082b42;
+# #                 border-radius: 6px;
+# #                 font-weight: 600;
+# #                 padding: 0.5rem 1rem;
+# #                 transition: all 0.3s ease;
+# #             }
+# #             .stButton > button:hover {
+# #                 background-color: #f39c12;
+# #                 color: #0b3c5d;
+# #                 border-color: #e08e0b;
+# #             }
+# #             .edu-footer {
+# #                 background: #0b3c5d;
+# #                 color: #ffffff;
+# #                 text-align: center;
+# #                 padding: 18px;
+# #                 border-radius: 8px;
+# #                 margin-top: 50px;
+# #                 font-size: 13px;
+# #                 border-top: 4px solid #f39c12;
+# #             }
+# #             .feature-card {
+# #                 background-color: #f8f9fa;
+# #                 border: 1px solid #e9ecef;
+# #                 padding: 20px;
+# #                 border-radius: 8px;
+# #                 box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+# #                 height: 100%;
+# #             }
+# #             .feature-card img {
+# #                 width: 100% !important;
+# #                 height: 180px !important;
+# #                 object-fit: cover !important;
+# #                 object-position: center !important;
+# #                 border-radius: 6px;
+# #                 margin-bottom: 12px;
+# #             }
+# #             .block-container {
+# #                 padding-top: 2rem;
+# #                 padding-bottom: 3rem;
+# #             }
+# #         </style>
+        
+# #         <div class="edu-header">
+# #             <h2>EduGuard-AI</h2>
+# #             <p>Department of Computer Science & Software Engineering &bull; University of Engineering and Technology (UET) Mardan</p>
+# #         </div>
+# #     """,
+# #       unsafe_allow_html=True,
+# #   )
+
+
+# # def render_footer():
+# #   st.markdown(
+# #       """
+# #         <div class="edu-footer">
+# #             <b>EduGuard-AI Academic Evaluation System</b> &bull; Department of Computer Science & Software Engineering<br>
+# #             University of Engineering and Technology (UET) Mardan, KPK, Pakistan &copy; 2026. All Rights Reserved.
+# #         </div>
+# #     """,
+# #       unsafe_allow_html=True,
+# #   )
+
+
+# # def render_navbar():
+# #   col1, col2, col3, col4, col5 = st.columns(5)
+# #   with col1:
+# #     if st.button("Home", use_container_width=True):
+# #       st.session_state["nav"] = "Home"
+# #   with col2:
+# #     if st.button("Dashboard", use_container_width=True):
+# #       st.session_state["nav"] = "Dashboard"
+# #   with col3:
+# #     if st.button("Batch Evaluation & CGPA", use_container_width=True):
+# #       st.session_state["nav"] = "Batch Evaluation"
+# #   with col4:
+# #     if st.button("Single Student", use_container_width=True):
+# #       st.session_state["nav"] = "Single Student"
+# #   with col5:
+# #     if st.button("Database Logs & Batches", use_container_width=True):
+# #       st.session_state["nav"] = "Database Logs"
+# #   st.markdown("---")
+
+
+# # if "nav" not in st.session_state:
+# #   st.session_state["nav"] = "Home"
+
+# # render_header()
+# # render_navbar()
+
+# # current_page = st.session_state["nav"]
+
+
+# # # ==========================================
+# # # PAGE: HOME
+# # # ==========================================
+# # if current_page == "Home":
+# #   local_image_path = "uet_banner.jpg"
+# #   if os.path.exists(local_image_path):
+# #     st.image(
+# #         local_image_path,
+# #         use_container_width=True,
+# #         caption=(
+# #             "UET Mardan - Excellence in Engineering and Computing Education"
+# #         ),
+# #     )
+
+# #   st.markdown("<br>", unsafe_allow_html=True)
+# #   st.markdown("### Welcome to EduGuard-AI Decision Support")
+# #   st.write(
+# #       "EduGuard-AI is an advanced institutional analytics and early-warning"
+# #       " framework engineered specifically for the Department of Computer"
+# #       " Science & Software Engineering at UET Mardan. It combines continuous"
+# #       " assessment monitoring, machine learning risk classification, and"
+# #       " automated multi-channel reporting to support academic advisors."
+# #   )
+
+# #   st.markdown("<br>", unsafe_allow_html=True)
+
+# #   col1, col2, col3 = st.columns(3)
+# #   img1_b64 = get_base64_image("predictive_img.jpg")
+# #   img2_b64 = get_base64_image("batch_img.jpg")
+# #   img3_b64 = get_base64_image("automated.jpg")
+
+# #   with col1:
+# #     st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+# #     if img1_b64:
+# #       st.markdown(
+# #           f'<img src="data:image/jpeg;base64,{img1_b64}" style="width:100%;'
+# #           " height:160px; object-fit:cover; border-radius:6px;"
+# #           ' margin-bottom:12px;">',
+# #           unsafe_allow_html=True,
+# #       )
+# #     else:
+# #       st.info("Upload `predictive_img.jpg`")
+# #     st.markdown("#### Predictive Analytics")
+# #     st.write(
+# #         "Utilizes trained models and SHAP explainability to pinpoint students"
+# #         " requiring academic support early in the semester."
+# #     )
+# #     st.markdown("</div>", unsafe_allow_html=True)
+
+# #   with col2:
+# #     st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+# #     if img2_b64:
+# #       st.markdown(
+# #           f'<img src="data:image/jpeg;base64,{img2_b64}" style="width:100%;'
+# #           " height:160px; object-fit:cover; border-radius:6px;"
+# #           ' margin-bottom:12px;">',
+# #           unsafe_allow_html=True,
+# #       )
+# #     else:
+# #       st.info("Upload `batch_img.jpg`")
+# #     st.markdown("#### Batch Processing")
+# #     st.write(
+# #         "Seamlessly ingest CSV, Excel, or bulk ZIP grade records to compute"
+# #         " precise semester GPAs, CGPAs, and categorical risk tags."
+# #     )
+# #     st.markdown("</div>", unsafe_allow_html=True)
+
+# #   with col3:
+# #     st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+# #     if img3_b64:
+# #       st.markdown(
+# #           f'<img src="data:image/jpeg;base64,{img3_b64}" style="width:100%;'
+# #           " height:160px; object-fit:cover; border-radius:6px;"
+# #           ' margin-bottom:12px;">',
+# #           unsafe_allow_html=True,
+# #       )
+# #     else:
+# #       st.info("Upload `automated.jpg`")
+# #     st.markdown("#### Automated Advisory")
+# #     st.write(
+# #         "Dispatches personalized performance notices and feedback digests"
+# #         " directly to students or advisors securely via SMTP."
+# #     )
+# #     st.markdown("</div>", unsafe_allow_html=True)
+
+
+# # # ==========================================
+# # # PAGE: DASHBOARD
+# # # ==========================================
+# # elif current_page == "Dashboard":
+# #   st.markdown("### Faculty Analytics Dashboard")
+# #   st.write(
+# #       "Overview of department-wide academic standing and active risk"
+# #       " distribution."
+# #   )
+
+# #   col1, col2, col3, col4 = st.columns(4)
+# #   col1.metric("Total Active Students", "342", "+12")
+# #   col2.metric("At-Risk Students", "28", "-4")
+# #   col3.metric("Average Department CGPA", "2.94", "+0.05")
+# #   col4.metric("Batch Evaluation Status", "Up to Date", "Active")
+
+# #   st.markdown("---")
+# #   st.info(
+# #       "Upload or select a batch dataset in the **Batch Evaluation & CGPA** tab"
+# #       " to generate live distribution charts and analytics."
+# #   )
+# #   st.markdown("<br><br><br>", unsafe_allow_html=True)
+
+
+# # # ==========================================
+# # # PAGE: BATCH EVALUATION & CGPA
+# # # ==========================================
+# # elif current_page == "Batch Evaluation":
+# #   st.markdown("### Batch Semester Student Evaluation & CGPA Calculator")
+# #   st.write(
+# #       "Upload department grade sheets or CSV datasets, configure course credit"
+# #       " hours, compute accurate SGPA/CGPA, download clean reports, and send"
+# #       " individual results to all students."
+# #   )
+
+# #   batch_tag = st.text_input("Batch Tag / ID", "Fall-2026-CS-4")
+# #   uploaded_file = st.file_uploader(
+# #       "Upload Course Grades Dataset (CSV or Excel)", type=["csv", "xlsx"]
+# #   )
+
+# #   if uploaded_file:
+# #     try:
+# #       if uploaded_file.name.endswith(".csv"):
+# #         df = pd.read_csv(uploaded_file)
+# #       else:
+# #         df = pd.read_excel(uploaded_file)
+
+# #       ignore_keywords = [
+# #           "s. no",
+# #           "roll no",
+# #           "name",
+# #           "f_name",
+# #           "program",
+# #           "email",
+# #           "unnamed",
+# #           "sgpa",
+# #           "cgpa",
+# #           "evaluation",
+# #       ]
+# #       available_columns = [
+# #           col
+# #           for col in df.columns
+# #           if not any(kw in str(col).lower() for kw in ignore_keywords)
+# #       ]
+
+# #       st.success(
+# #           f"Successfully loaded dataset: {uploaded_file.name} ({len(df)}"
+# #           " records)"
+# #       )
+
+# #       st.markdown("---")
+# #       st.markdown(
+# #           "### Select Relevant Courses & Configure Credit Hours (Cr. Hr)"
+# #       )
+
+# #       selected_courses = []
+# #       credit_hours_dict = {}
+
+# #       if available_columns:
+# #         cols_per_row = 3
+# #         for i in range(0, len(available_columns), cols_per_row):
+# #           row_cols = st.columns(cols_per_row)
+# #           for j in range(cols_per_row):
+# #             if i + j < len(available_columns):
+# #               col_name = available_columns[i + j]
+# #               with row_cols[j]:
+# #                 is_sel = st.checkbox(
+# #                     f"Include {col_name}", value=True, key=f"chk_{col_name}"
+# #                 )
+# #                 if is_sel:
+# #                   selected_courses.append(col_name)
+# #                   credit_hours_dict[col_name] = st.selectbox(
+# #                       f"Cr. Hr for {col_name}", [3.0, 4.0, 2.0, 1.0], key=f"cr_{col_name}"
+# #                   )
+# #       else:
+# #         selected_courses = available_columns
+
+# #       if selected_courses:
+# #         if st.button("Run Batch Evaluation & Calculate CGPA"):
+# #           evaluated_df = calculate_cgpa_and_grades(
+# #               df, selected_courses, credit_hours_dict
+# #           )
+# #           st.session_state["active_df"] = evaluated_df
+# #           st.session_state["selected_courses"] = selected_courses
+# #           st.success(
+# #               "Batch evaluation and accurate CGPA calculation completed"
+# #               " successfully!"
+# #           )
+
+# #     except Exception as e:
+# #       st.error(f"Error reading file: {e}")
+
+# #   if "active_df" in st.session_state:
+# #     st.markdown("---")
+# #     st.markdown("### Evaluated Dataset & Clean Report")
+
+# #     active_df = st.session_state["active_df"]
+
+# #     # Filter/clean unnecessary columns for display and export
+# #     essential_cols = [
+# #         col
+# #         for col in active_df.columns
+# #         if not str(col).lower().startswith("unnamed")
+# #     ]
+# #     display_df = active_df[essential_cols]
+
+# #     st.dataframe(
+# #         display_df.style.apply(highlight_risk_rows, axis=1),
+# #         use_container_width=True,
+# #     )
+
+# #     # CSV Download Button
+# #     csv_data = display_df.to_csv(index=False).encode("utf-8")
+# #     st.download_button(
+# #         label="Download Evaluated Results & CGPA as CSV",
+# #         data=csv_data,
+# #         file_name=f"EduGuard_AI_Batch_Results_{batch_tag}.csv",
+# #         mime="text/csv",
+# #     )
+
+# #     st.markdown("---")
+# #     st.markdown("### Automated Bulk Email Dispatch to All Students")
+# #     st.write(
+# #         "Send each student an individual email containing only their own"
+# #         " results and CGPA summary."
+# #     )
+
+# #     with st.expander("Configure SMTP & Send Individual Reports"):
+# #       col_e1, col_e2 = st.columns(2)
+# #       with col_e1:
+# #         smtp_host = st.text_input(
+# #             "SMTP Host", value="smtp.gmail.com", key="batch_sh"
+# #         )
+# #         smtp_port = st.number_input(
+# #             "SMTP Port", value=587, step=1, key="batch_sp"
+# #         )
+# #       with col_e2:
+# #         sender_email = st.text_input("Sender Email", value="", key="batch_se")
+# #         sender_password = st.text_input(
+# #             "Sender App Password", type="password", value="", key="batch_spass"
+# #         )
+
+# #       if st.button("Send Individual Results to All Students via Email"):
+# #         if not sender_email or not sender_password:
+# #           st.error("Please provide sender email and app password.")
+# #         elif "Email" not in active_df.columns:
+# #           st.error(
+# #               "No 'Email' column found in the dataset to dispatch emails."
+# #           )
+# #         else:
+# #           smtp_config = {
+# #               "host": smtp_host,
+# #               "port": int(smtp_port),
+# #               "sender_email": sender_email,
+# #               "sender_password": sender_password,
+# #           }
+# #           with st.spinner("Dispatching individual emails to all students..."):
+# #             success_count, error_msg = send_bulk_performance_emails(
+# #                 active_df, smtp_config
+# #             )
+# #             if error_msg:
+# #               st.warning(f"Completed with notices: {error_msg}")
+# #             else:
+# #               st.success(
+# #                   f"Successfully sent individual result emails to all students!"
+# #               )
+
+# #   st.markdown("<br><br>", unsafe_allow_html=True)
+
+
+# # # ==========================================
+# # # PAGE: SINGLE STUDENT (SEARCH & ADD NEW STUDENT)
+# # # ==========================================
+# # elif current_page == "Single Student":
+# #   st.markdown("### Single Student Diagnostics & Advising")
+# #   st.write(
+# #       "Search existing student records or **add a new student** to the active"
+# #       " session database with automated risk evaluation."
+# #   )
+
+# #   tab_search, tab_add = st.tabs(
+# #       ["Search Existing Student", "Add New Student Record"]
+# #   )
+
+# #   with tab_search:
+# #     student_search_id = st.text_input(
+# #         "Enter Student ID / Roll No. to Search (e.g., 24-FA-04626):", ""
+# #     )
+# #     if student_search_id:
+# #       if "active_df" in st.session_state:
+# #         match_df = st.session_state["active_df"][
+# #             st.session_state["active_df"]
+# #             .astype(str)
+# #             .apply(lambda x: x.str.contains(student_search_id))
+# #             .any(axis=1)
+# #         ]
+# #         if not match_df.empty:
+# #           st.success(f"Found record for {student_search_id}")
+# #           st.dataframe(
+# #               match_df.style.apply(highlight_risk_rows, axis=1),
+# #               use_container_width=True,
+# #           )
+# #           student_row = match_df.iloc[0]
+# #         else:
+# #           st.warning(
+# #               "Student ID not found in the currently loaded dataset."
+# #           )
+# #           student_row = None
+# #       else:
+# #         st.warning(
+# #             "No batch dataset loaded. Please upload a dataset in 'Batch"
+# #             " Evaluation & CGPA' or add the student using the 'Add New Student"
+# #             " Record' tab."
+# #         )
+# #         student_row = None
+
+# #       if student_row is not None:
+# #         with st.expander("Send Individual Student Advisory Notice"):
+# #           ind_host = st.text_input(
+# #               "SMTP Host", value="smtp.gmail.com", key="ih"
+# #           )
+# #           ind_port = st.number_input("SMTP Port", value=587, step=1, key="ip")
+# #           ind_sender = st.text_input("Sender Email", value="", key="is")
+# #           ind_pass = st.text_input(
+# #               "Sender App Password", type="password", value="", key="ipass"
+# #           )
+# #           ind_recipient = st.text_input(
+# #               "Student / Recipient Email Address", value="", key="irec"
+# #           )
+
+# #           if st.button("Send Single Advisory Notice"):
+# #             if not ind_sender or not ind_pass or not ind_recipient:
+# #               st.error(
+# #                   "Please fill in sender credentials and recipient email."
+# #               )
+# #             else:
+# #               smtp_config = {
+# #                   "host": ind_host,
+# #                   "port": int(ind_port),
+# #                   "sender_email": ind_sender,
+# #                   "sender_password": ind_pass,
+# #               }
+# #               df_single = pd.DataFrame([student_row])
+# #               with st.spinner("Sending individual notice..."):
+# #                 count, err = send_bulk_performance_emails(
+# #                     df_single,
+# #                     smtp_config,
+# #                     specific_student_id=student_search_id,
+# #                     fallback_email=ind_recipient,
+# #                 )
+# #                 if err:
+# #                   st.warning(f"Notice: {err}")
+# #                 else:
+# #                   st.success(
+# #                       "Individual advisory email sent successfully!"
+# #                   )
+
+# #   with tab_add:
+# #     st.markdown("#### Enter Student Details")
+# #     col_a, col_b = st.columns(2)
+# #     with col_a:
+# #       new_roll = st.text_input("Roll No. / Student ID", "24-FA-09999")
+# #       new_name = st.text_input("Student Name", "John Doe")
+# #     with col_b:
+# #       new_email = st.text_input(
+# #           "Student Email Address", "student@uetmardan.edu.pk"
+# #       )
+# #       new_program = st.text_input(
+# #           "Program / Department", "BS Software Engineering"
+# #       )
+
+# #     st.markdown("#### Course Grades / Marks Entry")
+# #     default_courses = st.session_state.get(
+# #         "selected_courses",
+# #         [
+# #             "OOP",
+# #             "Data Structures",
+# #             "Operating Systems",
+# #             "Artificial Intelligence",
+# #         ],
+# #     )
+
+# #     new_grades = {}
+# #     grade_cols = st.columns(min(len(default_courses), 3))
+# #     for idx, course in enumerate(default_courses):
+# #       with grade_cols[idx % len(grade_cols)]:
+# #         new_grades[course] = st.number_input(
+# #             f"Marks: {course} (0-100)",
+# #             min_value=0.0,
+# #             max_value=100.0,
+# #             value=75.0,
+# #             step=1.0,
+# #             key=f"ng_{course}",
+# #         )
+
+# #     st.markdown("---")
+# #     st.markdown("#### SMTP Configuration for Direct Email Dispatch")
+# #     col_s1, col_s2 = st.columns(2)
+# #     with col_s1:
+# #       add_smtp_host = st.text_input(
+# #           "SMTP Host", value="smtp.gmail.com", key="add_ih"
+# #       )
+# #       add_smtp_port = st.number_input(
+# #           "SMTP Port", value=587, step=1, key="add_ip"
+# #       )
+# #       add_sender = st.text_input("Sender Email", value="", key="add_is")
+# #     with col_s2:
+# #       add_pass = st.text_input(
+# #           "Sender App Password", type="password", value="", key="add_ipass"
+# #       )
+# #       send_email_toggle = st.checkbox(
+# #           "Send Performance Report Email to Student Upon Saving", value=True
+# #       )
+
+# #     if st.button("Save, Evaluate & Send Report"):
+# #       avg_score = (
+# #           sum(new_grades.values()) / len(new_grades) if new_grades else 0
+# #       )
+# #       min_score = min(new_grades.values()) if new_grades else 0
+# #       evaluation_status = (
+# #           "At Risk" if (min_score < 35 or avg_score < 50) else "No Risk"
+# #       )
+
+# #       new_row = {
+# #           "Roll No.": new_roll,
+# #           "Name": new_name,
+# #           "Email": new_email,
+# #           "Program": new_program,
+# #           **new_grades,
+# #           "SGPA / CGPA": 3.2,
+# #           "Evaluation": evaluation_status,
+# #       }
+
+# #       if "active_df" in st.session_state:
+# #         new_df_row = pd.DataFrame([new_row])
+# #         st.session_state["active_df"] = pd.concat(
+# #             [st.session_state["active_df"], new_df_row], ignore_index=True
+# #         )
+# #       else:
+# #         st.session_state["active_df"] = pd.DataFrame([new_row])
+
+# #       st.success(
+# #           f"Student **{new_name} ({new_roll})** successfully added and"
+# #           f" evaluated as **{evaluation_status}**!"
+# #       )
+
+# #       if send_email_toggle:
+# #         if not add_sender or not add_pass or not new_email:
+# #           st.warning(
+# #               "Student saved, but email could not be sent: Missing sender"
+# #               " credentials or recipient email address."
+# #           )
+# #         else:
+# #           smtp_config = {
+# #               "host": add_smtp_host,
+# #               "port": int(add_smtp_port),
+# #               "sender_email": add_sender,
+# #               "sender_password": add_pass,
+# #           }
+# #           df_single = pd.DataFrame([new_row])
+# #           with st.spinner("Sending performance report to student..."):
+# #             count, err = send_bulk_performance_emails(
+# #                 df_single,
+# #                 smtp_config,
+# #                 specific_student_id=new_roll,
+# #                 fallback_email=new_email,
+# #             )
+# #             if err:
+# #               st.warning(f"Notice: {err}")
+# #             else:
+# #               st.success(
+# #                   f"Performance report email successfully sent to"
+# #                   f" {new_email}!"
+# #               )
+
+# #       st.markdown("##### Updated Active Dataset Preview:")
+# #       st.dataframe(
+# #           st.session_state["active_df"].style.apply(
+# #               highlight_risk_rows, axis=1
+# #           ),
+# #           use_container_width=True,
+# #       )
+
+# #   st.markdown("<br><br><br>", unsafe_allow_html=True)
+
+
+# # # ==========================================
+# # # PAGE: DATABASE LOGS & BATCHES
+# # # ==========================================
+# # elif current_page == "Database Logs":
+# #   st.markdown("### Institutional Database Logs & Batches")
+# #   st.write(
+# #       "Audit trail of past batch evaluations, system logs, and communication"
+# #       " histories."
+# #   )
+
+# #   log_data = pd.DataFrame({
+# #       "Timestamp": ["2026-09-21 21:16", "2026-09-20 18:30", "2026-09-18 10:15"],
+# #       "Batch Tag": ["Fall-2026-CS-4", "Fall-2026-SE-2", "Spring-2026-CS-6"],
+# #       "Records Processed": [45, 52, 38],
+# #       "Action": [
+# #           "Batch Evaluation & Emails",
+# #           "CGPA Calculation",
+# #           "Risk Assessment",
+# #       ],
+# #       "Status": ["Completed", "Completed", "Completed"],
+# #   })
+# #   st.dataframe(log_data, use_container_width=True)
+# #   st.markdown("<br><br><br>", unsafe_allow_html=True)
+
+
+# # # ==========================================
+# # # GLOBAL FOOTER RENDER
+# # # ==========================================
+# # render_footer()
+
 # import base64
 # import os
 # import pandas as pd
@@ -26,7 +760,7 @@
 
 
 # def calculate_cgpa_and_grades(df, selected_courses, credit_hours_dict):
-#   """Calculates individual course grade points, SGPA, and Risk status."""
+#   """Calculates individual course grade points, SGPA, and Risk status by normalizing marks to 100."""
 #   updated_df = df.copy()
 
 #   sgpas = []
@@ -35,31 +769,53 @@
 #   for _, row in updated_df.iterrows():
 #     total_quality_points = 0.0
 #     total_credits = 0.0
-#     min_marks = 100.0
+#     min_percentage = 100.0
 
 #     for course in selected_courses:
-#       marks = pd.to_numeric(row.get(course, 0), errors="coerce")
-#       if pd.isna(marks):
-#         marks = 0.0
-#       if marks < min_marks:
-#         min_marks = marks
+#       val = row.get(course, 0)
+#       if pd.isna(val) or str(val).strip().lower() == "none":
+#         marks_pct = 0.0
+#       else:
+#         marks = pd.to_numeric(val, errors="coerce")
+#         if pd.isna(marks):
+#           marks = 0.0
 
-#       # Standard grading conversion
-#       if marks >= 85:
+#         # Automatically normalize marks if out of 10, 15, 20, 50, etc., to percentage (out of 100)
+#         # If max marks in column or dataset suggests smaller scale, scale it to 100
+#         max_col_val = pd.to_numeric(updated_df[course], errors="coerce").max()
+#         if pd.isna(max_col_val) or max_col_val <= 0:
+#           max_col_val = 100.0
+
+#         if max_col_val <= 15:
+#           marks_pct = (marks / 15.0) * 100.0
+#         elif max_col_val <= 20:
+#           marks_pct = (marks / 20.0) * 100.0
+#         elif max_col_val <= 50:
+#           marks_pct = (marks / 50.0) * 100.0
+#         elif max_col_val <= 100:
+#           marks_pct = marks
+#         else:
+#           marks_pct = (marks / max_col_val) * 100.0
+
+#       if marks_pct < min_percentage:
+#         min_percentage = marks_pct
+
+#       # Standard UET grading conversion based on percentage
+#       if marks_pct >= 85:
 #         gp = 4.0
-#       elif marks >= 80:
+#       elif marks_pct >= 80:
 #         gp = 3.7
-#       elif marks >= 75:
+#       elif marks_pct >= 75:
 #         gp = 3.3
-#       elif marks >= 70:
+#       elif marks_pct >= 70:
 #         gp = 3.0
-#       elif marks >= 65:
+#       elif marks_pct >= 65:
 #         gp = 2.7
-#       elif marks >= 60:
+#       elif marks_pct >= 60:
 #         gp = 2.3
-#       elif marks >= 55:
+#       elif marks_pct >= 55:
 #         gp = 2.0
-#       elif marks >= 50:
+#       elif marks_pct >= 50:
 #         gp = 1.0
 #       else:
 #         gp = 0.0
@@ -75,8 +831,8 @@
 #     )
 #     sgpas.append(sgpa)
 
-#     # Risk criteria: min marks below 35 or SGPA below 2.0
-#     if min_marks < 35 or sgpa < 2.0:
+#     # Risk criteria: min percentage below 50% or SGPA below 2.0
+#     if min_percentage < 50.0 or sgpa < 2.0:
 #       eval_statuses.append("At Risk")
 #     else:
 #       eval_statuses.append("No Risk")
@@ -229,9 +985,7 @@
 #   st.write(
 #       "EduGuard-AI is an advanced institutional analytics and early-warning"
 #       " framework engineered specifically for the Department of Computer"
-#       " Science & Software Engineering at UET Mardan. It combines continuous"
-#       " assessment monitoring, machine learning risk classification, and"
-#       " automated multi-channel reporting to support academic advisors."
+#       " Science & Software Engineering at UET Mardan."
 #   )
 
 #   st.markdown("<br>", unsafe_allow_html=True)
@@ -250,12 +1004,10 @@
 #           ' margin-bottom:12px;">',
 #           unsafe_allow_html=True,
 #       )
-#     else:
-#       st.info("Upload `predictive_img.jpg`")
 #     st.markdown("#### Predictive Analytics")
 #     st.write(
 #         "Utilizes trained models and SHAP explainability to pinpoint students"
-#         " requiring academic support early in the semester."
+#         " requiring academic support."
 #     )
 #     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -268,12 +1020,10 @@
 #           ' margin-bottom:12px;">',
 #           unsafe_allow_html=True,
 #       )
-#     else:
-#       st.info("Upload `batch_img.jpg`")
 #     st.markdown("#### Batch Processing")
 #     st.write(
-#         "Seamlessly ingest CSV, Excel, or bulk ZIP grade records to compute"
-#         " precise semester GPAs, CGPAs, and categorical risk tags."
+#         "Seamlessly ingest CSV or Excel records to compute precise semester"
+#         " GPAs, CGPAs, and risk tags."
 #     )
 #     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -286,12 +1036,10 @@
 #           ' margin-bottom:12px;">',
 #           unsafe_allow_html=True,
 #       )
-#     else:
-#       st.info("Upload `automated.jpg`")
 #     st.markdown("#### Automated Advisory")
 #     st.write(
 #         "Dispatches personalized performance notices and feedback digests"
-#         " directly to students or advisors securely via SMTP."
+#         " directly to students securely via SMTP."
 #     )
 #     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -301,21 +1049,14 @@
 # # ==========================================
 # elif current_page == "Dashboard":
 #   st.markdown("### Faculty Analytics Dashboard")
-#   st.write(
-#       "Overview of department-wide academic standing and active risk"
-#       " distribution."
-#   )
-
 #   col1, col2, col3, col4 = st.columns(4)
 #   col1.metric("Total Active Students", "342", "+12")
 #   col2.metric("At-Risk Students", "28", "-4")
 #   col3.metric("Average Department CGPA", "2.94", "+0.05")
 #   col4.metric("Batch Evaluation Status", "Up to Date", "Active")
-
 #   st.markdown("---")
 #   st.info(
-#       "Upload or select a batch dataset in the **Batch Evaluation & CGPA** tab"
-#       " to generate live distribution charts and analytics."
+#       "Upload or select a batch dataset in the **Batch Evaluation & CGPA** tab."
 #   )
 #   st.markdown("<br><br><br>", unsafe_allow_html=True)
 
@@ -413,8 +1154,6 @@
 #     st.markdown("### Evaluated Dataset & Clean Report")
 
 #     active_df = st.session_state["active_df"]
-
-#     # Filter/clean unnecessary columns for display and export
 #     essential_cols = [
 #         col
 #         for col in active_df.columns
@@ -427,7 +1166,6 @@
 #         use_container_width=True,
 #     )
 
-#     # CSV Download Button
 #     csv_data = display_df.to_csv(index=False).encode("utf-8")
 #     st.download_button(
 #         label="Download Evaluated Results & CGPA as CSV",
@@ -491,10 +1229,6 @@
 # # ==========================================
 # elif current_page == "Single Student":
 #   st.markdown("### Single Student Diagnostics & Advising")
-#   st.write(
-#       "Search existing student records or **add a new student** to the active"
-#       " session database with automated risk evaluation."
-#   )
 
 #   tab_search, tab_add = st.tabs(
 #       ["Search Existing Student", "Add New Student Record"]
@@ -520,58 +1254,11 @@
 #           )
 #           student_row = match_df.iloc[0]
 #         else:
-#           st.warning(
-#               "Student ID not found in the currently loaded dataset."
-#           )
+#           st.warning("Student ID not found in the currently loaded dataset.")
 #           student_row = None
 #       else:
-#         st.warning(
-#             "No batch dataset loaded. Please upload a dataset in 'Batch"
-#             " Evaluation & CGPA' or add the student using the 'Add New Student"
-#             " Record' tab."
-#         )
+#         st.warning("No batch dataset loaded.")
 #         student_row = None
-
-#       if student_row is not None:
-#         with st.expander("Send Individual Student Advisory Notice"):
-#           ind_host = st.text_input(
-#               "SMTP Host", value="smtp.gmail.com", key="ih"
-#           )
-#           ind_port = st.number_input("SMTP Port", value=587, step=1, key="ip")
-#           ind_sender = st.text_input("Sender Email", value="", key="is")
-#           ind_pass = st.text_input(
-#               "Sender App Password", type="password", value="", key="ipass"
-#           )
-#           ind_recipient = st.text_input(
-#               "Student / Recipient Email Address", value="", key="irec"
-#           )
-
-#           if st.button("Send Single Advisory Notice"):
-#             if not ind_sender or not ind_pass or not ind_recipient:
-#               st.error(
-#                   "Please fill in sender credentials and recipient email."
-#               )
-#             else:
-#               smtp_config = {
-#                   "host": ind_host,
-#                   "port": int(ind_port),
-#                   "sender_email": ind_sender,
-#                   "sender_password": ind_pass,
-#               }
-#               df_single = pd.DataFrame([student_row])
-#               with st.spinner("Sending individual notice..."):
-#                 count, err = send_bulk_performance_emails(
-#                     df_single,
-#                     smtp_config,
-#                     specific_student_id=student_search_id,
-#                     fallback_email=ind_recipient,
-#                 )
-#                 if err:
-#                   st.warning(f"Notice: {err}")
-#                 else:
-#                   st.success(
-#                       "Individual advisory email sent successfully!"
-#                   )
 
 #   with tab_add:
 #     st.markdown("#### Enter Student Details")
@@ -707,21 +1394,12 @@
 # # ==========================================
 # elif current_page == "Database Logs":
 #   st.markdown("### Institutional Database Logs & Batches")
-#   st.write(
-#       "Audit trail of past batch evaluations, system logs, and communication"
-#       " histories."
-#   )
-
 #   log_data = pd.DataFrame({
-#       "Timestamp": ["2026-09-21 21:16", "2026-09-20 18:30", "2026-09-18 10:15"],
-#       "Batch Tag": ["Fall-2026-CS-4", "Fall-2026-SE-2", "Spring-2026-CS-6"],
-#       "Records Processed": [45, 52, 38],
-#       "Action": [
-#           "Batch Evaluation & Emails",
-#           "CGPA Calculation",
-#           "Risk Assessment",
-#       ],
-#       "Status": ["Completed", "Completed", "Completed"],
+#       "Timestamp": ["2026-09-21 21:16", "2026-09-20 18:30"],
+#       "Batch Tag": ["Fall-2026-CS-4", "Fall-2026-SE-2"],
+#       "Records Processed": [45, 52],
+#       "Action": ["Batch Evaluation & Emails", "CGPA Calculation"],
+#       "Status": ["Completed", "Completed"],
 #   })
 #   st.dataframe(log_data, use_container_width=True)
 #   st.markdown("<br><br><br>", unsafe_allow_html=True)
@@ -759,6 +1437,95 @@ def get_base64_image(image_path):
   return ""
 
 
+def preprocess_uet_assessment_dataframe(df_raw):
+  """Detects multi-component UET mark sheets (e.g., Quiz, Midterm, Total) and flattens them into clean course totals with generated student emails."""
+  # Check if this is a raw multi-component sheet by looking for 'Unnamed' or assessment keywords in row 0
+  header_row_check = (
+      any("Unnamed" in str(col) for col in df_raw.columns)
+      or "Quiz" in str(df_raw.iloc[0].values)
+      or "Total" in str(df_raw.iloc[0].values)
+  )
+
+  if not header_row_check:
+    # Already a clean flat dataframe, just ensure Email column exists
+    if "Email" not in df_raw.columns and "Roll No." in df_raw.columns:
+      df_raw["Email"] = (
+          df_raw["Roll No."]
+          .str.lower()
+          .apply(lambda x: f"{x}@uetmardan.edu.pk" if pd.notna(x) else "")
+      )
+    return df_raw
+
+  # Process multi-row header format (Row 3 onwards usually contains student records)
+  # Find row index where student records begin (where Roll No. pattern starts or S. No. is numeric)
+  start_idx = 0
+  for idx, row in df_raw.iterrows():
+    val = str(row.get("Roll No.", ""))
+    if "-" in val and len(val) >= 5:
+      start_idx = idx
+      break
+  else:
+    start_idx = 3  # Default fallback based on standard UET department template
+
+  students_df = df_raw.iloc[start_idx:].copy()
+  students_df = students_df.dropna(subset=[df_raw.columns[1]])  # Roll No column
+
+  # Map standard descriptive columns
+  cleaned_data = pd.DataFrame()
+  cleaned_data["S. No."] = range(1, len(students_df) + 1)
+  cleaned_data["Roll No."] = students_df.iloc[:, 1].values
+  cleaned_data["Name"] = students_df.iloc[:, 2].values
+  cleaned_data["F_Name"] = (
+      students_df.iloc[:, 3].values
+      if students_df.shape[1] > 3
+      else "Not Provided"
+  )
+  cleaned_data["Program"] = (
+      students_df.iloc[:, 4].values if students_df.shape[1] > 4 else "SE-4"
+  )
+
+  # Auto-generate email from roll number for bulk dispatch compatibility
+  cleaned_data["Email"] = (
+      cleaned_data["Roll No."]
+      .astype(str)
+      .str.lower()
+      .apply(lambda x: f"{x.strip()}@uetmardan.edu.pk" if x and x != "nan" else "")
+  )
+
+  # Extract course total columns (typically labeled 'Total' or located right before next course header)
+  cols = df_raw.columns
+  row_zero = df_raw.iloc[0] if len(df_raw) > 0 else pd.Series()
+
+  current_course = None
+  for i, col_name in enumerate(cols):
+    if i < 5:
+      continue  # Skip S. No, Roll No, Name, F_Name, Program
+
+    # Check if this column or header indicates a course title or a 'Total' metric
+    col_str = str(col_name)
+    r0_str = str(row_zero.iloc[i]) if i < len(row_zero) else ""
+
+    if not col_str.startswith("Unnamed"):
+      current_course = col_str.strip()
+
+    if "total" in r0_str.lower() or i == len(cols) - 1 or "Total" in r0_str:
+      target_course_name = current_course if current_course else f"Course_{i}"
+      cleaned_data[target_course_name] = pd.to_numeric(
+          students_df.iloc[:, i], errors="coerce"
+      ).fillna(0.0)
+
+  # Fallback if no course totals were dynamically caught
+  if len(cleaned_data.columns) <= 6:
+    # Just grab numeric columns from students_df
+    for i in range(5, students_df.shape[1]):
+      col_val = students_df.iloc[:, i]
+      numeric_check = pd.to_numeric(col_val, errors="coerce")
+      if numeric_check.notna().sum() > 0:
+        cleaned_data[f"Subject_{i}"] = numeric_check.fillna(0.0)
+
+  return cleaned_data
+
+
 def calculate_cgpa_and_grades(df, selected_courses, credit_hours_dict):
   """Calculates individual course grade points, SGPA, and Risk status by normalizing marks to 100."""
   updated_df = df.copy()
@@ -780,9 +1547,9 @@ def calculate_cgpa_and_grades(df, selected_courses, credit_hours_dict):
         if pd.isna(marks):
           marks = 0.0
 
-        # Automatically normalize marks if out of 10, 15, 20, 50, etc., to percentage (out of 100)
-        # If max marks in column or dataset suggests smaller scale, scale it to 100
-        max_col_val = pd.to_numeric(updated_df[course], errors="coerce").max()
+        max_col_val = pd.to_numeric(
+            updated_df[course], errors="coerce"
+        ).max()
         if pd.isna(max_col_val) or max_col_val <= 0:
           max_col_val = 100.0
 
@@ -902,14 +1669,6 @@ def render_header():
                 box-shadow: 0 2px 4px rgba(0,0,0,0.05);
                 height: 100%;
             }
-            .feature-card img {
-                width: 100% !important;
-                height: 180px !important;
-                object-fit: cover !important;
-                object-position: center !important;
-                border-radius: 6px;
-                margin-bottom: 12px;
-            }
             .block-container {
                 padding-top: 2rem;
                 padding-bottom: 3rem;
@@ -1022,8 +1781,8 @@ if current_page == "Home":
       )
     st.markdown("#### Batch Processing")
     st.write(
-        "Seamlessly ingest CSV or Excel records to compute precise semester"
-        " GPAs, CGPAs, and risk tags."
+        "Seamlessly ingest complex CSV or Excel mark sheets to compute precise"
+        " semester GPAs, CGPAs, and risk tags."
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1067,12 +1826,12 @@ elif current_page == "Dashboard":
 elif current_page == "Batch Evaluation":
   st.markdown("### Batch Semester Student Evaluation & CGPA Calculator")
   st.write(
-      "Upload department grade sheets or CSV datasets, configure course credit"
-      " hours, compute accurate SGPA/CGPA, download clean reports, and send"
-      " individual results to all students."
+      "Upload multi-component department mark sheets or CSV datasets, configure"
+      " course credit hours, compute accurate SGPA/CGPA, download clean reports,"
+      " and send individual results to all students."
   )
 
-  batch_tag = st.text_input("Batch Tag / ID", "Fall-2026-CS-4")
+  batch_tag = st.text_input("Batch Tag / ID", "Spring-2026-SE-4")
   uploaded_file = st.file_uploader(
       "Upload Course Grades Dataset (CSV or Excel)", type=["csv", "xlsx"]
   )
@@ -1080,9 +1839,12 @@ elif current_page == "Batch Evaluation":
   if uploaded_file:
     try:
       if uploaded_file.name.endswith(".csv"):
-        df = pd.read_csv(uploaded_file)
+        df_raw = pd.read_csv(uploaded_file)
       else:
-        df = pd.read_excel(uploaded_file)
+        df_raw = pd.read_excel(uploaded_file)
+
+      # Preprocess raw dataframe to handle multi-column headers and component layouts
+      df = preprocess_uet_assessment_dataframe(df_raw)
 
       ignore_keywords = [
           "s. no",
@@ -1092,6 +1854,9 @@ elif current_page == "Batch Evaluation":
           "program",
           "email",
           "unnamed",
+          "quiz",
+          "assignment",
+          "midterm",
           "sgpa",
           "cgpa",
           "evaluation",
@@ -1103,8 +1868,8 @@ elif current_page == "Batch Evaluation":
       ]
 
       st.success(
-          f"Successfully loaded dataset: {uploaded_file.name} ({len(df)}"
-          " records)"
+          f"Successfully loaded and preprocessed dataset: {uploaded_file.name}"
+          f" ({len(df)} records)"
       )
 
       st.markdown("---")
@@ -1129,7 +1894,9 @@ elif current_page == "Batch Evaluation":
                 if is_sel:
                   selected_courses.append(col_name)
                   credit_hours_dict[col_name] = st.selectbox(
-                      f"Cr. Hr for {col_name}", [3.0, 4.0, 2.0, 1.0], key=f"cr_{col_name}"
+                      f"Cr. Hr for {col_name}",
+                      [3.0, 4.0, 2.0, 1.0],
+                      key=f"cr_{col_name}",
                   )
       else:
         selected_courses = available_columns
@@ -1147,7 +1914,7 @@ elif current_page == "Batch Evaluation":
           )
 
     except Exception as e:
-      st.error(f"Error reading file: {e}")
+      st.error(f"Error reading or processing file: {e}")
 
   if "active_df" in st.session_state:
     st.markdown("---")
@@ -1231,12 +1998,12 @@ elif current_page == "Single Student":
   st.markdown("### Single Student Diagnostics & Advising")
 
   tab_search, tab_add = st.tabs(
-      ["<b>Search Existing Student</b>", "<b>Add New Student Record</b>"]
+      ["Search Existing Student", "Add New Student Record"]
   )
 
   with tab_search:
     student_search_id = st.text_input(
-        "Enter Student ID / Roll No. to Search (e.g., 24-FA-04626):", ""
+        "Enter Student ID / Roll No. to Search (e.g., 24-FA-04623):", ""
     )
     if student_search_id:
       if "active_df" in st.session_state:
@@ -1278,10 +2045,10 @@ elif current_page == "Single Student":
     default_courses = st.session_state.get(
         "selected_courses",
         [
-            "OOP",
-            "Data Structures",
-            "Operating Systems",
+            "Principles of Marketing",
             "Artificial Intelligence",
+            "Multivariable Calculus",
+            "Computer Network",
         ],
     )
 
@@ -1395,10 +2162,10 @@ elif current_page == "Single Student":
 elif current_page == "Database Logs":
   st.markdown("### Institutional Database Logs & Batches")
   log_data = pd.DataFrame({
-      "Timestamp": ["2026-09-21 21:16", "2026-09-20 18:30"],
-      "Batch Tag": ["Fall-2026-CS-4", "Fall-2026-SE-2"],
-      "Records Processed": [45, 52],
-      "Action": ["Batch Evaluation & Emails", "CGPA Calculation"],
+      "Timestamp": ["2026-09-22 15:00", "2026-09-21 21:16"],
+      "Batch Tag": ["Spring-2026-SE-4", "Fall-2026-CS-4"],
+      "Records Processed": [45, 45],
+      "Action": ["Multi-Component Sheet Preprocessing", "Batch Evaluation"],
       "Status": ["Completed", "Completed"],
   })
   st.dataframe(log_data, use_container_width=True)
